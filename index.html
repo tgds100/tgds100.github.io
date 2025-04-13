@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="https://cdn-front.freepik.com/favicons/favicon-96x96.png?w=96&amp;v=2" type="image/png" sizes="96x96">
+    <title>订阅访问验证系统</title>
+    <script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary-blue: #1890ff;
+            --text-dark: #2c3e50;
+            --bg-light: #f8f9fa;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 680px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background: var(--bg-light);
+        }
+
+        .auth-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .password-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e3e3e3;
+            border-radius: 8px;
+            font-size: 16px;
+            margin: 1rem 0;
+            transition: all 0.3s;
+        }
+
+        .password-input:focus {
+            border-color: var(--primary-blue);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(24,144,255,0.2);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .submit-btn:hover {
+            background: #1478d2;
+        }
+
+        .content-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .qrcode-box {
+            width: 180px;
+            height: 180px;
+            margin: 1.5rem auto;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .qr-caption {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .copy-link {
+            color: var(--primary-blue);
+            cursor: pointer;
+            border-bottom: 1px dashed;
+        }
+
+        .error-msg {
+            color: #ff4d4f;
+            margin: 1rem 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-card">
+        <h1 style="text-align: center; color: var(--text-dark); margin-bottom: 1.5rem;">订阅访问验证</h1>
+        <input type="password" class="password-input" placeholder="请输入访问密码" id="password">
+        <button class="submit-btn" onclick="checkPassword()">立即验证</button>
+        <div id="error" class="error-msg"></div>
+    </div>
+
+    <div class="content-card" id="content">
+        <div class="subscription-content" data-password="rocket123">
+            <h3>🚀RocketCloud 订阅（只支持vless协议）</h3>
+            <p>订阅地址：<span class="copy-link" onclick="copyText(this)">https://rocketcloud.cchappy.eu.org/7804e51b-a0c1-444b-98bc-4f85544ccea4</span></p>
+            <div class="qrcode-box" id="qrcode-rocket"></div>
+            <span class="qr-caption">打开代理工具，扫描二维码导入</span>
+        </div>
+
+        <div class="subscription-content" data-password="tomato456">
+            <h3>🍅TomatoCloud 订阅（只支持trojan协议）</h3>
+            <p>订阅地址：<span class="copy-link" onclick="copyText(this)">https://tomatocloud.tgdaosheng.ggff.net/YsdpqUsSWQihOsDD</span></p>
+            <div class="qrcode-box" id="qrcode-tomato"></div>
+            <span class="qr-caption">打开代理工具，扫描二维码导入</span>
+        </div>
+
+        <div class="subscription-content" data-password="vless789">
+            <h3>Vless 订阅</h3>
+            <p>订阅地址：<span class="copy-link" onclick="copyText(this)">https://vless.tgdaosheng.ggff.net/9943c5be-242d-46a7-9695-b42234f324c5</span></p>
+            <div class="qrcode-box" id="qrcode-vless"></div>
+            <span class="qr-caption">打开代理工具，扫描二维码导入</span>
+        </div>
+
+        <div class="subscription-content" data-password="trojan012">
+            <h3>Trojan 订阅</h3>
+            <p>订阅地址：<span class="copy-link" onclick="copyText(this)">https://trojan.tgdaosheng.ggff.net/fW5gBraym6eppMJLWp</span></p>
+            <div class="qrcode-box" id="qrcode-trojan"></div>
+            <span class="qr-caption">打开代理工具，扫描二维码导入</span>
+        </div>
+    </div>
+
+    <script>
+        // 密码配置 (可自行修改)
+        const PASSWORDS = {
+            rocket123: "#qrcode-rocket",
+            tomato456: "#qrcode-tomato",
+            vless789: "#qrcode-vless",
+            trojan012: "#qrcode-trojan"
+        };
+
+        function checkPassword() {
+            const password = document.getElementById("password").value;
+            const errorDiv = document.getElementById("error");
+            const contentCard = document.getElementById("content");
+
+            // 重置状态
+            document.querySelectorAll(".subscription-content").forEach(el => el.style.display = "none");
+            contentCard.style.display = "none";
+            errorDiv.textContent = "";
+
+            if (PASSWORDS[password]) {
+                const target = document.querySelector(`[data-password="${password}"]`);
+                const qrContainer = document.querySelector(PASSWORDS[password]);
+                
+                // 清空旧二维码
+                qrContainer.innerHTML = '';
+                
+                // 显示内容
+                target.style.display = "block";
+                contentCard.style.display = "block";
+
+                // 生成新二维码
+                const url = target.querySelector(".copy-link").innerText;
+                try {
+                    const qr = qrcode(0, 'M');
+                    qr.addData(url);
+                    qr.make();
+                    qrContainer.innerHTML = qr.createSvgTag({
+                        cellSize: 6,
+                        margin: 4,
+                        scalable: true
+                    });
+                } catch (error) {
+                    console.error('二维码生成失败:', error);
+                    qrContainer.innerHTML = '<p style="color:red; font-size:12px">二维码生成失败，请手动复制地址</p>';
+                }
+            } else {
+                errorDiv.textContent = "密码错误，请检查后重试";
+            }
+        }
+
+        function copyText(element) {
+            const text = element.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert("已复制到剪贴板");
+            });
+        }
+
+        document.getElementById("password").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") checkPassword();
+        });
+    </script>
+</body>
+</html>
